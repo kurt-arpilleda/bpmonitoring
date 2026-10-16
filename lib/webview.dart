@@ -456,7 +456,7 @@ class _SoftwareWebViewScreenState extends State<SoftwareWebViewScreen> with Widg
       try {
         String jsCode = '''
 async function injectBarcode() {
-  const mtagField = document.getElementById('mtagField');
+  const mtagField = document.getElementById('employeeId');
   
   if (mtagField && mtagField.offsetParent !== null) {
     mtagField.focus();
@@ -469,6 +469,37 @@ async function injectBarcode() {
     
     mtagField.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
     await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Trigger Enter key event
+    const enterEvent = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true
+    });
+    mtagField.dispatchEvent(enterEvent);
+    
+    const enterEventUp = new KeyboardEvent('keyup', {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true
+    });
+    mtagField.dispatchEvent(enterEventUp);
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Try to find and click the associated search button
+    const searchBtn = mtagField.closest('form')?.querySelector('button[type="submit"], input[type="submit"]') ||
+                      mtagField.parentElement?.querySelector('button') ||
+                      document.querySelector('button[type="submit"]');
+    if (searchBtn) {
+      searchBtn.click();
+    }
     
     await new Promise(resolve => setTimeout(resolve, 100));
     mtagField.blur();
@@ -504,12 +535,12 @@ async function injectBarcode() {
   const activeElement = document.activeElement;
   
   const inputs = Array.from(document.querySelectorAll('input[type="text"], input[type="search"], input[type="number"], textarea'))
-    .filter(input => input.id !== 'searchInput' && input.id !== 'mtagField');
+    .filter(input => input.id !== 'searchInput' && input.id !== 'employeeId');
   
   const targetInput = activeElement && 
                      (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') &&
                      activeElement.id !== 'searchInput' &&
-                     activeElement.id !== 'mtagField'
+                     activeElement.id !== 'employeeId'
     ? activeElement 
     : inputs.length > 0 ? inputs[0] : null;
 
@@ -1008,76 +1039,6 @@ injectBarcode().then(result => result);
                                   iconSize: 28,
                                   onPressed: () {
                                     _showInputMethodPicker();
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 15),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: _currentLanguageFlag == 2 ? 58.0 : 46.0,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  _currentLanguageFlag == 2
-                                      ? 'メモ'
-                                      : 'Memo',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(width: 15),
-                                IconButton(
-                                  icon: Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFFE91E63),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
-                                          blurRadius: 4,
-                                          offset: Offset(2, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Transform(
-                                      alignment: Alignment.center,
-                                      transform: Matrix4.identity()..scale(-1.0, 1.0),
-                                      child: Icon(
-                                        Icons.mode_comment_outlined,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
-                                  onPressed: () async {
-                                    // Close the drawer first
-                                    Navigator.of(context).pop();
-
-                                    if (webViewController != null) {
-                                      try {
-                                        await webViewController!.evaluateJavascript(
-                                          source: "document.getElementById('memoBtn').click();",
-                                        );
-                                      } catch (e) {
-                                        Fluttertoast.showToast(
-                                          msg: _currentLanguageFlag == 2
-                                              ? "メモボタンをクリックできませんでした"
-                                              : "Could not click memo button",
-                                          toastLength: Toast.LENGTH_SHORT,
-                                          gravity: ToastGravity.BOTTOM,
-                                        );
-                                      }
-                                    }
                                   },
                                 ),
                               ],
